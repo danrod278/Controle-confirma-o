@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConfirmaHelp</title>
+
+    <link rel="stylesheet" href="stylePage.css">
+</head>
+
+<body>
+
+    <main>
+        <h1>ConfirmaHelp</h1>
+
+        <div class="inputs">
+
+            <div class="planilhas">
+                <label for="input_planilha_anterior">
+                    Planilha Anterior
+                </label>
+
+                <input
+                    type="file"
+                    id="input_planilha_anterior"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+
+                <span id="nome_arquivo_anterior" class="nome-arquivo">
+                    Nenhum arquivo selecionado
+                </span>
+            </div>
+
+            <div class="planilhas">
+                <label for="input_planilha_atualizada">
+                    Planilha Atualizada
+                </label>
+
+                <input
+                    type="file"
+                    id="input_planilha_atualizada"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+
+                <span id="nome_arquivo_atualizada" class="nome-arquivo">
+                    Nenhum arquivo selecionado
+                </span>
+            </div>
+
+            <button onclick="atualizarPlanilha()">
+                Atualizar Planilha
+            </button>
+
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="index.js"></script>
+
+</body>
+
+</html>
