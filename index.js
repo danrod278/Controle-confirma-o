@@ -1,11 +1,16 @@
 const inputPlanilhaAntiga = document.getElementById("input_planilha_anterior");
 const inputPlanilhaNova = document.getElementById("input_planilha_atualizada");
 
+// Lê uma planilha XLSX
 async function lerWorkbook(input) {
     const arquivo = input.files[0];
 
     if (!arquivo) {
         throw new Error("Selecione uma planilha.");
+    }
+
+    if (!arquivo.name.toLowerCase().endsWith(".xlsx")) {
+        throw new Error("Apenas arquivos .xlsx são permitidos.");
     }
 
     const buffer = await arquivo.arrayBuffer();
@@ -15,81 +20,74 @@ async function lerWorkbook(input) {
     });
 }
 
+// Remove espaços extras
 function normalizar(valor) {
     return String(valor ?? "").trim();
 }
 
+// Cria uma chave única usando Nº doc + CNPJ/CPF Sacado
+function criarChave(linha) {
+    return (
+        normalizar(linha["Nº doc"]) +
+        "|" +
+        normalizar(linha["CNPJ/CPF Sacado"])
+    );
+}
+
 async function atualizarPlanilha() {
-
     try {
-
-        // Lê os workbooks
         const wbAntiga = await lerWorkbook(inputPlanilhaAntiga);
         const wbNova = await lerWorkbook(inputPlanilhaNova);
 
-        // Primeira aba
-        const wsAntiga =
-            wbAntiga.Sheets[wbAntiga.SheetNames[0]];
+        const wsAntiga = wbAntiga.Sheets[wbAntiga.SheetNames[0]];
+        const wsNova = wbNova.Sheets[wbNova.SheetNames[0]];
 
-        const wsNova =
-            wbNova.Sheets[wbNova.SheetNames[0]];
+        const antiga = XLSX.utils.sheet_to_json(wsAntiga, {
+            defval: ""
+        });
 
-        // Converte para JSON
-        const antiga =
-            XLSX.utils.sheet_to_json(wsAntiga, {
-                defval: ""
-            });
-
-        const nova =
-            XLSX.utils.sheet_to_json(wsNova, {
-                defval: ""
-            });
+        const nova = XLSX.utils.sheet_to_json(wsNova, {
+            defval: ""
+        });
 
         // Índice da planilha antiga
         const indice = new Map();
 
         for (const linha of antiga) {
+            const chave = criarChave(linha);
 
-            const doc = normalizar(linha["Nº doc"]);
-
-            if (!doc) continue;
-
-            indice.set(doc, {
+            indice.set(chave, {
                 status: linha["Status de confirmação"],
                 posicao: linha["POSICAO"]
             });
-
         }
 
         let atualizados = 0;
 
-        // Atualiza a nova
+        // Atualiza a planilha nova
         for (const linha of nova) {
 
-            const doc = normalizar(linha["Nº doc"]);
+            const chave = criarChave(linha);
 
-            if (!indice.has(doc)) {
+            const dadosAntigos = indice.get(chave);
+
+            if (!dadosAntigos) {
                 continue;
             }
 
-            const antigo = indice.get(doc);
-
             linha["Status de confirmação"] =
-                antigo.status;
+                dadosAntigos.status;
 
             linha["POSICAO"] =
-                antigo.posicao;
+                dadosAntigos.posicao;
 
             atualizados++;
-
         }
 
-        // Gera a planilha preservando a nova
-        const wsResultado =
-            XLSX.utils.json_to_sheet(nova);
+        // Salva a nova planilha
+        const wsResultado = XLSX.utils.json_to_sheet(nova);
 
-        const wbResultado =
-            XLSX.utils.book_new();
+        const wbResultado = XLSX.utils.book_new();
 
         XLSX.utils.book_append_sheet(
             wbResultado,
@@ -103,15 +101,11 @@ async function atualizarPlanilha() {
         );
 
         alert(
-            `${atualizados} registros atualizados com sucesso.`
+            `Concluído! ${atualizados} registros atualizados.`
         );
 
-    } catch (e) {
-
-        console.error(e);
-
-        alert(e.message);
-
+    } catch (erro) {
+        console.error(erro);
+        alert(erro.message);
     }
-
 }
