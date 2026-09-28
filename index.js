@@ -1,4 +1,3 @@
-javascript
 const inputPlanilhaAntiga = document.getElementById("input_planilha_anterior");
 const inputPlanilhaNova = document.getElementById("input_planilha_atualizada");
 
@@ -21,12 +20,13 @@ async function lerWorkbook(input) {
     });
 }
 
-// Remove espaços extras
+// Normaliza os valores para comparação
 function normalizar(valor) {
     return String(valor ?? "").trim();
 }
 
-// Cria uma chave única usando Nº doc + CNPJ/CPF Cedente
+// Cria a chave usando:
+// Nº doc + CNPJ/CPF Cedente
 function criarChave(linha) {
     return (
         normalizar(linha["Nº doc"]) +
@@ -37,12 +37,18 @@ function criarChave(linha) {
 
 async function atualizarPlanilha() {
     try {
+        // =====================================================
+        // LÊ AS DUAS PLANILHAS
+        // =====================================================
+
         const wbAntiga = await lerWorkbook(inputPlanilhaAntiga);
         const wbNova = await lerWorkbook(inputPlanilhaNova);
 
+        // Pega a primeira aba de cada arquivo
         const wsAntiga = wbAntiga.Sheets[wbAntiga.SheetNames[0]];
         const wsNova = wbNova.Sheets[wbNova.SheetNames[0]];
 
+        // Converte as planilhas para objetos JavaScript
         const antiga = XLSX.utils.sheet_to_json(wsAntiga, {
             defval: ""
         });
@@ -51,41 +57,63 @@ async function atualizarPlanilha() {
             defval: ""
         });
 
-        // Índice da planilha antiga
+        // =====================================================
+        // CRIA ÍNDICE DA PLANILHA ANTIGA
+        // =====================================================
+
         const indice = new Map();
 
         for (const linha of antiga) {
             const chave = criarChave(linha);
 
             indice.set(chave, {
-                status: linha["Status de confirmação"],
-                posicao: linha["POSICAO"]
+                obs: linha["Obs"]
             });
         }
 
+        // =====================================================
+        // ATUALIZA A PLANILHA NOVA
+        // =====================================================
+
         let atualizados = 0;
 
-        // Atualiza a planilha nova
         for (const linha of nova) {
 
+            // Cria a chave:
+            // Nº doc + CNPJ/CPF Cedente
             const chave = criarChave(linha);
 
+            // Procura o título na planilha antiga
             const dadosAntigos = indice.get(chave);
 
+            // Se não encontrou, não altera a linha
             if (!dadosAntigos) {
                 continue;
             }
 
-            linha["Status de confirmação"] =
-                dadosAntigos.status;
+            // =================================================
+            // STATUS DE CONFIRMAÇÃO
+            // =================================================
+            // NÃO ALTERAMOS.
+            // O valor permanece exatamente como está
+            // na planilha NOVA.
+            //
+            // =================================================
 
-            linha["POSICAO"] =
-                dadosAntigos.posicao;
+            // =================================================
+            // OBS
+            // =================================================
+            // Copia a Obs da planilha antiga para a nova.
+            //
+            linha["Obs"] = dadosAntigos.obs;
 
             atualizados++;
         }
 
-        // Salva a nova planilha
+        // =====================================================
+        // GERA A PLANILHA FINAL
+        // =====================================================
+
         const wsResultado = XLSX.utils.json_to_sheet(nova);
 
         const wbResultado = XLSX.utils.book_new();
@@ -96,6 +124,7 @@ async function atualizarPlanilha() {
             "Atualizada"
         );
 
+        // Faz o download
         XLSX.writeFile(
             wbResultado,
             "planilha_atualizada.xlsx"
@@ -107,7 +136,11 @@ async function atualizarPlanilha() {
 
     } catch (erro) {
         console.error(erro);
-        alert(erro.message);
+
+        alert(
+            erro.message ||
+            "Ocorreu um erro ao processar as planilhas."
+        );
     }
 }
 
