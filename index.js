@@ -1,3 +1,4 @@
+javascript
 const inputPlanilhaAntiga = document.getElementById("input_planilha_anterior");
 const inputPlanilhaNova = document.getElementById("input_planilha_atualizada");
 
@@ -25,12 +26,12 @@ function normalizar(valor) {
     return String(valor ?? "").trim();
 }
 
-// Cria uma chave única usando Nº doc + CNPJ/CPF Sacado
+// Cria uma chave única usando Nº doc + CNPJ/CPF Cedente
 function criarChave(linha) {
     return (
         normalizar(linha["Nº doc"]) +
         "|" +
-        normalizar(linha["CNPJ/CPF Sacado"])
+        normalizar(linha["CNPJ/CPF Cedente"])
     );
 }
 
@@ -109,3 +110,4 @@ async function atualizarPlanilha() {
         alert(erro.message);
     }
 }
+
